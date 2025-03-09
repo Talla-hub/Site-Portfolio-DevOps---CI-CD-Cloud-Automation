@@ -16,6 +16,7 @@ resource "aws_s3_bucket_website_configuration" "portfolio" {
     suffix = "index.html"
   }
 }
+}
 # Public Access Block ajusté
 resource "aws_s3_bucket_public_access_block" "portfolio" {
   bucket = aws_s3_bucket.portfolio_bucket.id
