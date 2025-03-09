@@ -16,6 +16,7 @@ resource "aws_s3_bucket_website_configuration" "portfolio" {
     suffix = "index.html"
   }
 }
+
 # Public Access Block ajusté
 resource "aws_s3_bucket_public_access_block" "portfolio" {
   bucket = aws_s3_bucket.portfolio_bucket.id
@@ -56,6 +57,9 @@ resource "aws_cloudfront_distribution" "portfolio_distribution" {
   origin {
     domain_name = aws_s3_bucket.portfolio_bucket.bucket_regional_domain_name
     origin_id   = "S3-${aws_s3_bucket.portfolio_bucket.bucket}"
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.portfolio.cloudfront_access_identity_path
+    }
   }
 
   enabled = true
