@@ -43,7 +43,27 @@ resource "aws_s3_bucket_policy" "portfolio" {
     ]
   })
 }
+resource "aws_cloudfront_origin_access_identity" "portfolio" {
+  comment = "Accès sécurisé via CloudFront"
+}
 
+resource "aws_s3_bucket_policy" "portfolio" {
+  bucket = aws_s3_bucket.portfolio_bucket.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect    = "Allow",
+        Principal = {
+          AWS = aws_cloudfront_origin_access_identity.portfolio.iam_arn
+        },
+        Action    = "s3:GetObject",
+        Resource  = "${aws_s3_bucket.portfolio_bucket.arn}/*"
+      }
+    ]
+  })
+}
 # Activer la versioning du bucket
 resource "aws_s3_bucket_versioning" "portfolio_versioning" {
   bucket = aws_s3_bucket.portfolio_bucket.id
