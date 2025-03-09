@@ -103,7 +103,7 @@ resource "aws_cloudwatch_metric_alarm" "portfolio_errors" {
 }
 # Route 53 pour le DNS
 resource "aws_route53_record" "portfolio" {
-  zone_id = "VOTRE_ZONE_ID"
+  zone_id = "Z09896161H6X24FICK9T2"
   name    = "portfolio.votredomaine.com"
   type    = "A"
 
