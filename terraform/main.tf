@@ -24,6 +24,13 @@ resource "aws_s3_bucket" "portfolio_bucket" {
     index_document = "index.html"
   }
 }
+resource "aws_s3_bucket_public_access_block" "portfolio_bucket_public_access_block" {
+  bucket                  = aws_s3_bucket.portfolio_bucket.id
+  block_public_acls       = true
+  block_public_policy     = false
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
 
 # Activer la versioning du bucket
 resource "aws_s3_bucket_versioning" "portfolio_versioning" {
