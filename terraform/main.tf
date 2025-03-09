@@ -28,10 +28,12 @@ resource "aws_s3_bucket_public_access_block" "portfolio" {
 }
 
 
+# Créer une Origin Access Identity (OAI)
 resource "aws_cloudfront_origin_access_identity" "portfolio" {
-  comment = "Accès sécurisé via CloudFront"
+  comment = "Secure access via CloudFront"
 }
 
+# Politique S3 restreinte à CloudFront uniquement
 resource "aws_s3_bucket_policy" "portfolio" {
   bucket = aws_s3_bucket.portfolio_bucket.id
 
@@ -49,22 +51,18 @@ resource "aws_s3_bucket_policy" "portfolio" {
     ]
   })
 }
-# Activer la versioning du bucket
-resource "aws_s3_bucket_versioning" "portfolio_versioning" {
-  bucket = aws_s3_bucket.portfolio_bucket.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
 
-# Déployer via CloudFront (CDN)
+# Configuration CloudFront avec OAI
 resource "aws_cloudfront_distribution" "portfolio_distribution" {
   origin {
     domain_name = aws_s3_bucket.portfolio_bucket.bucket_regional_domain_name
     origin_id   = "S3-${aws_s3_bucket.portfolio_bucket.bucket}"
 
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.portfolio.cloudfront_access_identity_path
+    }
   }
-
+  # ... (garder le reste de la config existante)
   enabled = true
   default_root_object = "index.html"
 
@@ -93,6 +91,15 @@ resource "aws_cloudfront_distribution" "portfolio_distribution" {
     cloudfront_default_certificate = true
   }
 }
+# Activer la versioning du bucket
+resource "aws_s3_bucket_versioning" "portfolio_versioning" {
+  bucket = aws_s3_bucket.portfolio_bucket.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+
 # Créer une alarme CloudWatch pour les erreurs 4xx/5xx
 resource "aws_cloudwatch_metric_alarm" "portfolio_errors" {
   alarm_name          = "portfolio-high-error-rate"
