@@ -6,9 +6,18 @@ provider "aws" {
 # Créer un bucket S3 pour héberger le site
 resource "aws_s3_bucket" "portfolio_bucket" {
   bucket = "mon-portfolio-devops-123"
-  #acl    = "public-read"
 }
-# Configuration website séparée (plus récente)
+
+# Upload du fichier index.html
+resource "aws_s3_object" "index" {
+  bucket       = aws_s3_bucket.portfolio_bucket.bucket
+  key          = "index.html" # Doit correspondre au suffixe de index_document
+  source       = "site_Portfolio/index.html"
+  content_type = "text/html"
+  etag         = filemd5("site_Portfolio/index.html")
+}
+
+# Configuration website
 resource "aws_s3_bucket_website_configuration" "portfolio" {
   bucket = aws_s3_bucket.portfolio_bucket.id
 
@@ -17,23 +26,21 @@ resource "aws_s3_bucket_website_configuration" "portfolio" {
   }
 }
 
-# Public Access Block ajusté
+# Paramètres d'accès public
 resource "aws_s3_bucket_public_access_block" "portfolio" {
-  bucket = aws_s3_bucket.portfolio_bucket.id
-
-  block_public_acls       = false # ← Modifié
-  block_public_policy     = false # ← Modifié
+  bucket                  = aws_s3_bucket.portfolio_bucket.id
+  block_public_acls       = false
+  block_public_policy     = false
   ignore_public_acls      = false
   restrict_public_buckets = false
 }
 
-
-# Créer une Origin Access Identity (OAI)
+# Origin Access Identity (OAI)
 resource "aws_cloudfront_origin_access_identity" "portfolio" {
   comment = "Secure access via CloudFront"
 }
 
-# Politique S3 restreinte à CloudFront uniquement
+# Politique d'accès S3
 resource "aws_s3_bucket_policy" "portfolio" {
   bucket = aws_s3_bucket.portfolio_bucket.id
 
@@ -42,9 +49,7 @@ resource "aws_s3_bucket_policy" "portfolio" {
     Statement = [
       {
         Effect    = "Allow",
-        Principal = {
-          AWS = aws_cloudfront_origin_access_identity.portfolio.iam_arn
-        },
+        Principal = { AWS = aws_cloudfront_origin_access_identity.portfolio.iam_arn },
         Action    = "s3:GetObject",
         Resource  = "${aws_s3_bucket.portfolio_bucket.arn}/*"
       }
@@ -52,7 +57,7 @@ resource "aws_s3_bucket_policy" "portfolio" {
   })
 }
 
-# Configuration CloudFront avec OAI
+# Distribution CloudFront
 resource "aws_cloudfront_distribution" "portfolio_distribution" {
   origin {
     domain_name = aws_s3_bucket.portfolio_bucket.bucket_regional_domain_name
@@ -62,8 +67,8 @@ resource "aws_cloudfront_distribution" "portfolio_distribution" {
       origin_access_identity = aws_cloudfront_origin_access_identity.portfolio.cloudfront_access_identity_path
     }
   }
-  # ... (garder le reste de la config existante)
-  enabled = true
+
+  enabled             = true
   default_root_object = "index.html"
 
   default_cache_behavior {
@@ -79,6 +84,9 @@ resource "aws_cloudfront_distribution" "portfolio_distribution" {
     }
 
     viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 3600
+    max_ttl                = 86400
   }
 
   restrictions {
@@ -91,7 +99,8 @@ resource "aws_cloudfront_distribution" "portfolio_distribution" {
     cloudfront_default_certificate = true
   }
 }
-# Activer la versioning du bucket
+
+# Versioning du bucket
 resource "aws_s3_bucket_versioning" "portfolio_versioning" {
   bucket = aws_s3_bucket.portfolio_bucket.id
   versioning_configuration {
@@ -99,25 +108,25 @@ resource "aws_s3_bucket_versioning" "portfolio_versioning" {
   }
 }
 
-
-# Créer une alarme CloudWatch pour les erreurs 4xx/5xx
+# Alarme CloudWatch
 resource "aws_cloudwatch_metric_alarm" "portfolio_errors" {
   alarm_name          = "portfolio-high-error-rate"
   comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
+  evaluation_periods  = 1
   metric_name         = "4xxErrorRate"
   namespace           = "AWS/S3"
-  period              = "300"
+  period              = 300
   statistic           = "Average"
-  threshold           = "5"
+  threshold           = 5
   alarm_description   = "Alarme si taux d'erreurs élevé sur le portfolio"
   dimensions = {
     BucketName = aws_s3_bucket.portfolio_bucket.bucket
   }
 }
-# Route 53 pour le DNS
+
+# Enregistrement DNS Route53
 resource "aws_route53_record" "portfolio" {
-  zone_id = "Z09896161H6X24FICK9T2"
+  zone_id = "Z09896161H6X24FICK9T2" # À remplacer par votre Hosted Zone ID
   name    = "portfolio.votredomaine.com"
   type    = "A"
 
