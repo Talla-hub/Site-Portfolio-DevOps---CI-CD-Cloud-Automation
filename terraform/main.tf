@@ -7,7 +7,29 @@ provider "aws" {
 resource "aws_s3_bucket" "portfolio_bucket" {
   bucket = "mon-portfolio-devops-123"
   #acl    = "public-read"
-  # Ajoutez une politique de bucket pour gérer les autorisations d'accès
+
+# Configuration website séparée (plus récente)
+resource "aws_s3_bucket_website_configuration" "portfolio" {
+  bucket = aws_s3_bucket.portfolio_bucket.id
+
+  index_document {
+    suffix = "index.html"
+  }
+}
+# Public Access Block ajusté
+resource "aws_s3_bucket_public_access_block" "portfolio" {
+  bucket = aws_s3_bucket.portfolio_bucket.id
+
+  block_public_acls       = false # ← Modifié
+  block_public_policy     = false # ← Modifié
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+# Politique bucket séparée
+resource "aws_s3_bucket_policy" "portfolio" {
+  bucket = aws_s3_bucket.portfolio_bucket.id
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -15,21 +37,10 @@ resource "aws_s3_bucket" "portfolio_bucket" {
         Effect    = "Allow"
         Principal = "*"
         Action    = "s3:GetObject"
-        Resource  = "arn:aws:s3:::mon-portfolio-devops-123/*"
+        Resource  = "${aws_s3_bucket.portfolio_bucket.arn}/*"
       }
     ]
   })
-
-  website {
-    index_document = "index.html"
-  }
-}
-resource "aws_s3_bucket_public_access_block" "portfolio_bucket_public_access_block" {
-  bucket                  = aws_s3_bucket.portfolio_bucket.id
-  block_public_acls       = true
-  block_public_policy     = false
-  ignore_public_acls      = true
-  restrict_public_buckets = true
 }
 
 # Activer la versioning du bucket
