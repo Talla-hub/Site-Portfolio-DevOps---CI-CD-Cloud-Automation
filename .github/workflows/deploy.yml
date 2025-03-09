@@ -1,4 +1,4 @@
-name: Deploy Portfolio
+name: Déployer le Portfolio
 
 on:
   push:
@@ -9,25 +9,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Vérifier le code
         uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -t portfolio-app .
-
-      - name: Configure AWS Credentials
+      - name: Configurer les identifiants AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-3
 
-      - name: Push to AWS ECR
-        id: ecr
+      - name: Se connecter à Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Deploy with Terraform
+      - name: Construire et pousser l'image Docker vers ECR
         run: |
-          cd terraform/
-          terraform init
-          terraform apply -auto-approve
+          # Construire l'image Docker
+          docker build -t portfolio-app .
+
+          # Taguer l'image avec le référentiel ECR
+          docker tag portfolio-app:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-3.amazonaws.com/portfolio-app:latest
+
+          # Pousser l'image vers ECR
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-3.amazonaws.com/portfolio-app:latest
+
+      - name: Installer Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.1.7 # Spécifiez la version souhaitée
+
+      - name: Initialiser Terraform
+        run: terraform init
+        working-directory: ./terraform/
+
+      - name: Appliquer la configuration Terraform
+        run: terraform apply -auto-approve
+        working-directory: ./terraform/
