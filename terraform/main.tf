@@ -7,7 +7,7 @@ provider "aws" {
 resource "aws_s3_bucket" "portfolio_bucket" {
   bucket = "mon-portfolio-devops-123"
   #acl    = "public-read"
-
+}
 # Configuration website séparée (plus récente)
 resource "aws_s3_bucket_website_configuration" "portfolio" {
   bucket = aws_s3_bucket.portfolio_bucket.id
@@ -15,7 +15,6 @@ resource "aws_s3_bucket_website_configuration" "portfolio" {
   index_document {
     suffix = "index.html"
   }
-}
 }
 # Public Access Block ajusté
 resource "aws_s3_bucket_public_access_block" "portfolio" {
