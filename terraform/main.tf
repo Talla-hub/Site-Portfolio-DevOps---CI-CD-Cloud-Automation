@@ -5,7 +5,7 @@ provider "aws" {
 
 # Créer un bucket S3 pour héberger le site
 resource "aws_s3_bucket" "portfolio_bucket" {
-  bucket = "mon-portfolio-devops-123456"
+  bucket = "mon-portfolio-devops-123"
   #acl    = "public-read"
   # Ajoutez une politique de bucket pour gérer les autorisations d'accès
   policy = jsonencode({
