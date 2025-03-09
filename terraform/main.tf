@@ -12,9 +12,9 @@ resource "aws_s3_bucket" "portfolio_bucket" {
 resource "aws_s3_object" "index" {
   bucket       = aws_s3_bucket.portfolio_bucket.bucket
   key          = "index.html" # Doit correspondre au suffixe de index_document
-  source       = "site_Portfolio/index.html"
+  source       = "../site_Portfolio/index.html"
   content_type = "text/html"
-  etag         = filemd5("site_Portfolio/index.html")
+  etag         = filemd5("../site_Portfolio/index.html")
 }
 
 # Configuration website
